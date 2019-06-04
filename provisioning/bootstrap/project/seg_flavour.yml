@@ -1,0 +1,53 @@
+---
+- hosts: controllers
+  gather_facts: false
+  vars:
+    avi_creds:
+      controller: "{{ inventory_hostname }}"
+      username: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_username'] }}"
+      password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_password'] }}"
+
+  roles:
+    - avinetworks.avisdk
+
+  tasks:
+    - name: Get the Avi version information
+      avi_api_version:
+        avi_credentials: "{{ avi_creds }}"
+      register: avi_version
+      delegate_to: localhost
+
+    - name: Collect the cloud information
+      avi_api_session:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        http_method: get
+        path: cloud
+        params:
+          { name: AWS }
+      register: avi_cloud
+      delegate_to: localhost
+
+    - name: Collect the service group information
+      avi_api_session:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        http_method: get
+        path: serviceenginegroup
+        params:
+          { name: Default-Group, cloud_uuid: "{{ avi_cloud.obj.results[0].uuid }}" }
+      register: avi_seg
+      delegate_to: localhost
+
+    - name: Change the service group information
+      avi_serviceenginegroup:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        name: 'Default-Group'
+        instance_flavor: t2.micro
+        cloud_ref: '/api/cloud?name=AWS'
+      register: avi_seg_update
+      delegate_to: localhost
+
+    - debug:
+        var: avi_seg_update

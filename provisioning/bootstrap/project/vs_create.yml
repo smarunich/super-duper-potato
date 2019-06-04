@@ -1,0 +1,135 @@
+---
+- hosts: controllers
+  gather_facts: false
+  vars:
+    avi_creds:
+      controller: "{{ inventory_hostname }}"
+      username: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_username'] }}"
+      password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_password'] }}"
+
+  roles:
+    - avinetworks.avisdk
+
+  tasks:
+    - name: Set the default state to present
+      set_fact:
+        avi_state: "{{ avi_state|default('present') }}"
+
+    - name: Get the Avi version information
+      avi_api_version:
+        avi_credentials: "{{ avi_creds }}"
+      register: avi_version
+      delegate_to: localhost
+
+    - name: Collect the cloud infromation
+      avi_api_session:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        http_method: get
+        path: cloud
+        params:
+          { name: AWS }
+      register: avi_cloud
+      delegate_to: localhost
+
+    - name: Collect the subnet information
+      avi_api_session:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        http_method: get
+        path: networksubnetlist
+        params: { cloud_uuid: "{{ avi_cloud.obj.results[0].uuid }}", name: "{{ hostvars['jumpbox.student.lab']['Lab_avi_vip_network'] }}" }
+      register: avi_subnet
+      delegate_to: localhost
+
+    - name: Collect the instance information
+      avi_api_session:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        http_method: get
+        path: vimgrvmruntime
+        params: { cloud_ref: "{{ avi_cloud.obj.results[0].uuid }}", name: "server*" }
+      register: avi_instances
+      delegate_to: localhost
+
+    - name: create servers to be used on Pool
+      set_fact:
+        pool_servers: "{{ pool_servers | default([]) + [{'ip': { 'addr': item.guest_nic[0].guest_ip[0].prefix.ip_addr.addr, 'type': 'V4'}}] }}"
+      with_items: "{{ avi_instances.obj.results }}"
+
+    - name: Ensure the pool
+      avi_pool:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        cloud_ref: '/api/cloud?name=AWS'
+        state: "{{ avi_state }}"
+        name: my_application_pool
+        servers: "{{ pool_servers }}"
+        health_monitor_refs:
+          - /api/healthmonitor?name=System-HTTP
+      when: avi_state == "present"
+      delegate_to: localhost
+
+    - name: Ensure the VS VIP
+      avi_vsvip:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        name: my_application_vsvip
+        cloud_ref: '/api/cloud?name=AWS'
+        state: "{{ avi_state }}"
+        vip:
+          - auto_allocate_ip: true
+            subnet_uuid: "{{ avi_subnet.obj.results[0].uuid }}"
+            auto_allocate_floating_ip: true
+      when: avi_state == "present"
+      delegate_to: localhost
+
+    - name: Ensure the virtual service
+      avi_virtualservice:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        state: "{{ avi_state }}"
+        name: my_application
+        cloud_ref: '/api/cloud?name=AWS'
+        pool_ref: '/api/pool?name=my_application_pool'
+        application_profile_ref: '/api/applicationprofile?name=System-HTTP'
+        services:
+          - port: 80
+        vsvip_ref: '/api/vsvip?name=my_application_vsvip'
+        analytics_policy:
+          full_client_logs:
+            enabled: true
+            duration: 0
+          metrics_realtime_update:
+            enabled: true
+            duration: 0
+          all_headers: true
+      register: avi_vs
+      delegate_to: localhost
+
+    - name: Ensure the VS VIP
+      avi_vsvip:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        name: my_application_vsvip
+        cloud_ref: '/api/cloud?name=AWS'
+        state: "{{ avi_state }}"
+        vip:
+          - auto_allocate_ip: true
+            subnet_uuid: "{{ avi_subnet.obj.results[0].uuid }}"
+            auto_allocate_floating_ip: true
+      when: avi_state == "absent"
+      delegate_to: localhost
+
+    - name: Ensure the pool
+      avi_pool:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        cloud_ref: '/api/cloud?name=AWS'
+        state: "{{ avi_state }}"
+        name: my_application_pool
+        servers: "{{ pool_servers }}"
+        health_monitor_refs:
+          - /api/healthmonitor?name=System-HTTP
+      when: avi_state == "absent"
+      delegate_to: localhost

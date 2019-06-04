@@ -1,0 +1,40 @@
+---
+- hosts: controllers
+  gather_facts: false
+  vars:
+    avi_creds:
+      controller: "{{ inventory_hostname }}"
+      username: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_username'] }}"
+      password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_password'] }}"
+
+  roles:
+    - avinetworks.avisdk
+
+  tasks:
+    - name: Set the default virtual service name
+      set_fact:
+        avi_vs_name: "{{ avi_state|default('my_application') }}"
+
+    - name: Get the Avi version information
+      avi_api_version:
+        avi_credentials: "{{ avi_creds }}"
+      register: avi_version
+      delegate_to: localhost
+
+    - name: Collect the virtualservice infromation
+      avi_api_session:
+        avi_credentials: "{{ avi_creds }}"
+        api_version: "{{ avi_version.obj.version }}"
+        http_method: get
+        path: virtualservice
+        params:
+          { name: "{{ avi_vs_name }}" }
+      register: avi_vs
+      delegate_to: localhost
+
+    - name: Apache Benchmark
+      shell: "ab -n1000 -c5 http://{{ avi_vs.obj.results[0].vip[0].floating_ip.addr }}/"
+      register: shell_output
+
+    - debug:
+        var: shell_output

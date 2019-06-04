@@ -1,0 +1,32 @@
+---
+- name: "wait for active portal"
+  uri:
+    url: "https://{{ inventory_hostname }}/"
+    validate_certs: no
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 300
+  delay: 10
+  delegate_to: localhost
+
+- name: Create backup admin user on Avi
+  avi_api_session:
+    controller: "{{ inventory_hostname }}"
+    username: admin
+    password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"
+    http_method: post
+    path: user
+    data:
+      require_password_confirmation: false
+      is_active: true
+      is_superuser: true
+      access:
+        - tenant_ref: '/api/tenant?name=admin'
+          role_ref: '/api/role?name=System-Admin'
+      default_tenant_ref: '/api/tenant?name=admin'
+      name: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_username'] }}"
+      username: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_username'] }}"
+      password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_backup_admin_password'] }}"
+  delegate_to: localhost
+  ignore_errors: yes

@@ -1,0 +1,15 @@
+azure_subscription_id = ""
+azure_client_id = ""
+azure_client_secret = ""
+azure_tenant_id = ""
+azure_avi_image_id = "/subscriptions/subscription-id/resourceGroups/avitraining/providers/Microsoft.Compute/images/controller1823"
+location = "East US"
+avi_admin_password = "avi"
+avi_default_password = "avi"
+avi_backup_admin_username = "avi"
+avi_backup_admin_password = "avi"
+student_count = 2
+server_count = 2
+lab_timezone = "EST"
+id = "azure101"
+vnet_cidr = "172.21.0.0/16"
