@@ -75,3 +75,7 @@
   - hostvars[item]['Lab_Group'] == "controllers"
   - inventory_hostname is search("master1")
   with_inventory_hostnames: all
+- synchronize:
+    src: /root/.ssh/id_rsa
+    dest: /root/.ssh/id_rsa
+  delegate_to: localhost
