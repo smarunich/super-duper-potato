@@ -1,12 +1,12 @@
 # Terraform definition for the lab Controllers
-resource "azurerm_network_interface" "server_nic" {
-  count         = "${var.server_count * var.student_count}"
-  name          = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_nic"
+resource "azurerm_network_interface" "master_nic" {
+  count         = "${var.master_count * var.student_count}"
+  name         = "${var.id}_master${floor((count.index / var.student_count % length(azurerm_subnet.avi_privnet))) + 1}.student${count.index % var.student_count + 1}.lab_nic"
   location                  = var.location
   resource_group_name       = azurerm_resource_group.avi_resource_group.name
   network_security_group_id = azurerm_network_security_group.ctrl_sg.id
   ip_configuration {
-    name                          = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_ip"
+    name                          = "${var.id}_master${floor((count.index / var.student_count % length(azurerm_subnet.avi_privnet))) + 1}.student${count.index % var.student_count + 1}.lab_ip"
     subnet_id                     =  azurerm_subnet.avi_privnet[floor((count.index / var.student_count % length(azurerm_subnet.avi_privnet)))].id
     private_ip_address_allocation = "Dynamic"
   }
@@ -15,13 +15,13 @@ resource "azurerm_network_interface" "server_nic" {
   }
 }
 
-resource "azurerm_virtual_machine" "server" {
-  count         =  "${var.server_count * var.student_count}"
-  name          = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab"
+resource "azurerm_virtual_machine" "master" {
+  count         =  "${var.master_count * var.student_count}"
+  name          = "${var.id}_master${floor((count.index / var.student_count % var.master_count)) + 1}.student${count.index % var.student_count + 1}.lab"
   location                  = var.location
   resource_group_name       = azurerm_resource_group.avi_resource_group.name
-  vm_size                   = var.flavour_server
-  network_interface_ids     = [ azurerm_network_interface.server_nic[count.index].id ]
+  vm_size                   = var.flavour_master
+  network_interface_ids     = [ azurerm_network_interface.master_nic[count.index].id ]
 
   delete_os_disk_on_termination = true
   delete_data_disks_on_termination = true
@@ -34,14 +34,14 @@ resource "azurerm_virtual_machine" "server" {
   }
 
   storage_os_disk {
-    name              = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_ssd"
+    name              = "${var.id}_master${floor((count.index / var.student_count % var.master_count)) + 1}.student${count.index % var.student_count + 1}.lab_ssd"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "StandardSSD_LRS"
   }
 
   os_profile {
-    computer_name = "server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab"
+    computer_name = "master${floor((count.index / var.student_count % var.master_count)) + 1}.student${count.index % var.student_count + 1}.lab"
     admin_username = var.avi_ssh_admin_username
   }
 
@@ -58,17 +58,17 @@ resource "azurerm_virtual_machine" "server" {
   tags = {
     Owner                         = var.owner
     Lab_Group                     = "servers"
-    Lab_Name                      = "server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab"
+    Lab_Name                      = "master${floor((count.index / var.student_count % var.master_count)) + 1}.student${count.index % var.student_count + 1}.lab"
     Lab_Timezone                  = var.lab_timezone
   }
 }
 
-resource "azurerm_virtual_machine_extension" "server" {
-  count                = "${var.server_count * var.student_count}"
-  name                 = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab"
+resource "azurerm_virtual_machine_extension" "master" {
+  count                = "${var.master_count * var.student_count}"
+  name                 = "${var.id}_master${floor((count.index / var.student_count % var.master_count)) + 1}.student${count.index % var.student_count + 1}.lab"
   location             = var.location
   resource_group_name  = azurerm_resource_group.avi_resource_group.name
-  virtual_machine_name = azurerm_virtual_machine.server[count.index].name
+  virtual_machine_name = azurerm_virtual_machine.master[count.index].name
   publisher            = "Microsoft.Azure.Extensions"
   type                 = "CustomScript"
   type_handler_version = "2.0"
