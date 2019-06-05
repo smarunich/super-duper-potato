@@ -81,10 +81,10 @@
     azure_configuration:
       resource_group: "{{ hostvars['jumpbox.student.lab']['resourceGroupName'] }}"
       subscription_id: "{{ hostvars['jumpbox.student.lab']['Lab_subscription_id'] }}"
-      location: "{{ hostvars['jumpbox.student.lab']['location'] }}" 
+      location: "{{ hostvars['jumpbox.student.lab']['location'] }}"
       network_info:
         - virtual_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_vnet_id'] }}"
-          se_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_id'] + "_management_network" }}"
+          se_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_id'] + '_management_network' }}"
     custom_tags:
       - tag_val: "{{ hostvars['jumpbox.student.lab']['Owner'] }}"
         tag_key: Owner
@@ -113,7 +113,7 @@
     path: "networksubnetlist?name={{ item }}&cloud_uuid={{ cloud['obj']['uuid'] }}"
   register: subnet
   with_items:
-    - "{{ hostvars['jumpbox.student.lab']['Lab_id'] + "_student_" + student_id + "_app_network" }}"
+    - "{{ hostvars['jumpbox.student.lab']['Lab_id'] + '_student' + student_id + '_app_network' }}"
 
 - name: Define DNS Virtual Service
   import_role:
