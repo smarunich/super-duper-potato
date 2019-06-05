@@ -18,12 +18,12 @@ variable "flavour_avi" {
 
 variable "flavour_master" {
   description = "AWS instance type for servers etc"
-  default     = "Standard_DS3_v2"
+  default     = "Standard_D4s_v3"
 }
 
 variable "flavour_server" {
   description = "AWS instance type for servers etc"
-  default     = "Standard_DS2_v2"
+  default     = "Standard_D2s_v3"
 }
 
 variable "vol_size_centos" {

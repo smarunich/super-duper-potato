@@ -6,8 +6,8 @@ resource "azurerm_network_interface" "server_nic" {
   resource_group_name       = azurerm_resource_group.avi_resource_group.name
   network_security_group_id = azurerm_network_security_group.ctrl_sg.id
   ip_configuration {
-    name                          =  "${var.id}__server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_ip"
-    subnet_id                     =  azurerm_subnet.avi_privnet.id
+    name                          =  "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_ip"
+    subnet_id                     =  azurerm_subnet.avi_privnet[floor((count.index / var.student_count % var.server_count)) + 1].id
     private_ip_address_allocation = "Dynamic"
   }
   tags = {

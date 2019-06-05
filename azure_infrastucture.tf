@@ -17,14 +17,15 @@ resource "azurerm_virtual_network" "avi_vnet" {
 }
 
 resource "azurerm_subnet" "avi_pubnet" {
-  name                 = "${var.id}_infra_network"
-  resource_group_name = azurerm_resource_group.avi_resource_group.name
+  name                 =  "${var.id}_infra_network"
+  resource_group_name  = azurerm_resource_group.avi_resource_group.name
   virtual_network_name = azurerm_virtual_network.avi_vnet.name
   address_prefix       = cidrsubnet(var.vnet_cidr, 8, 0)
 }
 
 resource "azurerm_subnet" "avi_privnet" {
-  name                 =  "${var.id}_app_network"
+  count                = var.student_count
+  name                 = "${var.id}_student${count.index + 1}_app_network"
   resource_group_name  = azurerm_resource_group.avi_resource_group.name
   virtual_network_name = azurerm_virtual_network.avi_vnet.name
   address_prefix       = cidrsubnet(var.vnet_cidr, 8, 1)

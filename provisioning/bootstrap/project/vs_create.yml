@@ -14,6 +14,7 @@
     - name: Set the default state to present
       set_fact:
         avi_state: "{{ avi_state|default('present') }}"
+        student_id: "{{ inventory_hostname | regex_replace('^controller.student(\\d+).lab', '\\1') }}"
 
     - name: Get the Avi version information
       avi_api_version:
@@ -38,7 +39,7 @@
         api_version: "{{ avi_version.obj.version }}"
         http_method: get
         path: networksubnetlist
-        params: { cloud_uuid: "{{ avi_cloud.obj.results[0].uuid }}", name: "{{ hostvars['jumpbox.student.lab']['Lab_avi_vip_network'] }}" }
+        params: { cloud_uuid: "{{ avi_cloud.obj.results[0].uuid }}", name: "{{ hostvars['jumpbox.student.lab']['Lab_id'] + "_student_" + student_id + "_app_network" }}" }
       register: avi_subnet
       delegate_to: localhost
 

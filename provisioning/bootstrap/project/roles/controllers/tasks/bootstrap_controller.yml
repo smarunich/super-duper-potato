@@ -31,6 +31,10 @@
     old_password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"
   ignore_errors: yes
 
+- set_fact:
+    student_id: "{{ inventory_hostname | regex_replace('^controller.student(\\d+).lab', '\\1') }}"
+    student_domain: "{{ inventory_hostname | regex_replace('controller.','') }}"
+
 - name: Basic system configuration
   avi_systemconfiguration:
     avi_credentials: "{{ avi_credentials }}"
@@ -79,8 +83,8 @@
       subscription_id: "{{ hostvars['jumpbox.student.lab']['Lab_subscription_id'] }}"
       location: "{{ hostvars['jumpbox.student.lab']['location'] }}" 
       network_info:
-        - virtual_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_vnet_id'] }}"  
-          se_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_avi_management_network'] }}"
+        - virtual_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_vnet_id'] }}"
+          se_network_id: "{{ hostvars['jumpbox.student.lab']['Lab_id'] + "_management_network" }}"
     custom_tags:
       - tag_val: "{{ hostvars['jumpbox.student.lab']['Owner'] }}"
         tag_key: Owner
@@ -109,7 +113,7 @@
     path: "networksubnetlist?name={{ item }}&cloud_uuid={{ cloud['obj']['uuid'] }}"
   register: subnet
   with_items:
-    - "{{ hostvars['jumpbox.student.lab']['Lab_avi_vip_network'] }}"
+    - "{{ hostvars['jumpbox.student.lab']['Lab_id'] + "_student_" + student_id + "_app_network" }}"
 
 - name: Define DNS Virtual Service
   import_role:
@@ -143,8 +147,6 @@
   register: dns_vip
 
 - set_fact:
-    student_id: "{{ inventory_hostname | regex_replace('^controller.student(\\d+).lab', '\\1') }}"
-    student_domain: "{{ inventory_hostname | regex_replace('controller.','') }}"
     dns_vs_ip: "{{ dns_vip['obj']['results'][0]['vip'][0]['ip_address']['addr'] }}"
 
 - group_by:

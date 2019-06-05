@@ -48,6 +48,11 @@
   - psacct
   - openshift-ansible
   - atomic
+- pip:
+    name: "{{ item }}"
+    extra_args: --proxy {{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
+  with_items:
+  - ansible==2.6.17
 - file:
     path: /opt/bootstrap/openshift-ansible
     state: directory

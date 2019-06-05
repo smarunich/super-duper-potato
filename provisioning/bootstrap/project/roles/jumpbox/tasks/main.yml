@@ -21,6 +21,11 @@
   - bind-utils
   - openshift-ansible
   - atomic
+- pip:
+    name: "{{ item }}"
+    extra_args: --proxy {{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
+  with_items:
+  - ansible==2.6.17
 - lineinfile:
     dest: /etc/dnsmasq.conf
     insertafter: EOF
@@ -88,3 +93,13 @@
     restart: yes
     detach: true
     state: started
+- copy:
+    src: /root/.ssh/id_rsa
+    dest: /root/.ssh/id_rsa
+    owner: root
+    group: root
+    mode: '0600'
+  delegate_to: "{{ inventory_hostname }}"
+  with_inventory_hostnames: all3
+  when:
+  - hostvars[item]['Lab_Group'] == "servers"
