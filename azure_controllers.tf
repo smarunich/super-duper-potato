@@ -6,7 +6,6 @@ resource "azurerm_public_ip" "ctrl_eip" {
   location                     = var.location
   resource_group_name          = azurerm_resource_group.avi_resource_group.name
   allocation_method            = "Dynamic"
-  fqdn                         = "${var.id}student${count.index + 1}"
   tags = {
     Owner = var.owner
   }
