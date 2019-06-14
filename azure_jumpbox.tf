@@ -81,7 +81,7 @@ resource "azurerm_virtual_machine" "jumpbox" {
 
   depends_on        = [tls_private_key.generated_access_key, local_file.aviadmin_pem]
 
-
+  # Up to 15 tags as per Azure
   tags = {
     Owner                         = var.owner
     Lab_Group                     = "jumpbox"
