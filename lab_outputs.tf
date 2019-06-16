@@ -18,13 +18,22 @@ output "Controller_PublicIP" {
   value = data.azurerm_public_ip.ctrl_eip.*.ip_address
 }
 
+output "Controller_FQDN" {
+  value = data.azurerm_public_ip.ctrl_eip.*.fqdn
+}
+
 output "Controller_PrivateIP" {
   value = azurerm_network_interface.ctrl_nic.*.private_ip_address
+}
+
+output "Master_PrivateIP" {
+  value = azurerm_network_interface.master_nic.*.private_ip_address
 }
 
 output "Server_PrivateIP" {
   value = azurerm_network_interface.server_nic.*.private_ip_address
 }
+
 
 output "Generated_Access_Key" {
   value = "Please use generated aviadmin.pem key to access Jumphost by SSH"

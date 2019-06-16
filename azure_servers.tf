@@ -1,4 +1,5 @@
-# Terraform definition for the lab Controllers
+# Terraform definition for the servers
+
 resource "azurerm_network_interface" "server_nic" {
   count         = "${var.server_count * var.student_count}"
   name          = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_nic"
@@ -7,7 +8,7 @@ resource "azurerm_network_interface" "server_nic" {
   network_security_group_id = azurerm_network_security_group.ctrl_sg.id
   ip_configuration {
     name                          = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab_ip"
-    subnet_id                     =  azurerm_subnet.avi_privnet[floor((count.index / var.student_count % length(azurerm_subnet.avi_privnet)))].id
+    subnet_id                     =  azurerm_subnet.avi_privnet[count.index % var.student_count].id
     private_ip_address_allocation = "Dynamic"
   }
   tags = {
