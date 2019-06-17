@@ -17,7 +17,6 @@ variable "azure_tenant_id" {
 }
 
 variable "azure_avi_image_id" {
-  default = "/subscriptions/77d6aa12-ef65-44f8-b9f5-07e7f7e8b48b/resourceGroups/avitraining/providers/Microsoft.Compute/images/controller1823"
 }
 
 variable "location" {
