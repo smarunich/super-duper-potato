@@ -1,0 +1,36 @@
+---
+- connection: local
+  hosts: localhost
+  vars:
+    file_contents: "{{lookup('file', terraform_tfvars_path)}}"
+  tasks:
+  - set_fact:
+      azure_subscription_id: "{{ file_contents | regex_search('azure_subscription_id\\W+([\\w-]+)', '\\1') | first }}"
+      azure_tenant_id: "{{ file_contents | regex_search('azure_tenant_id\\W+([\\w-]+)', '\\1') | first }}"
+      student_count: "{{ file_contents | regex_search('student_count\\W+([\\w-]+)', '\\1') | first }}"
+      id: "{{ file_contents | regex_search('id\\W+([\\w-]+)', '\\1') | first }}"
+      azure_client_secret: "{{ file_contents | regex_search('azure_client_secret\\W+([\\w-]+)', '\\1') | first }}"
+      avi_admin_password: "{{ file_contents | regex_search('avi_admin_password\\W+\"(.*)\"', '\\1') | first }}"
+      azure_client_id: "{{ file_contents | regex_search('azure_client_id\\W+([\\w-]+)', '\\1') | first }}"
+  - name: Create IPAM DNS for Azure
+    avi_ipamdnsproviderprofile:
+      controller: "{{ id + 'student' + item + '.eastus.cloudapp.azure.com' }}"
+      username: 'admin'
+      password: "{{ avi_admin_password }}"
+      api_version: 18.2.4
+      azure_profile:
+        resource_group: "{{ id + '_resource_group' }}"
+        usable_network_uuids:
+        - "{{ id +'_student' + item + '_app_network' }}"
+        azure_serviceprincipal:
+          tenant_id: "{{ azure_tenant_id }}"
+          application_id: "{{ azure_client_id }}"
+          authentication_token: "{{ azure_client_secret }}"
+        virtual_network_ids:
+        - "{{ '/subscriptions/' + azure_subscription_id + '/resourceGroups/' + id + '_resource_group/providers/Microsoft.Network/virtualNetworks/' + id + '_vnet' }}"
+        subscription_id: "{{ azure_subscription_id }}"
+      tenant_ref: /api/tenant/?name=admin
+      allocate_ip_in_vrf: false
+      type: IPAMDNS_TYPE_AZURE
+      name: "{{ 'ipam_app.student' + item + '.lab'}}"
+    with_sequence: "{{ student_count }}"
