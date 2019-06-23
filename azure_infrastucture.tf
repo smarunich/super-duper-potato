@@ -16,6 +16,17 @@ resource "azurerm_virtual_network" "avi_vnet" {
   }
 }
 
+resource "azurerm_availability_set" "avi_as" {
+  count                = var.student_count
+  name                 = "${var.id}_student${count.index + 1}_as"
+  location             = var.location
+  managed              = true
+  resource_group_name  = azurerm_resource_group.avi_resource_group.name
+  tags = {
+    Owner = var.owner
+  }
+}
+
 resource "azurerm_subnet" "avi_pubnet" {
   name                 =  "${var.id}_infra_network"
   resource_group_name  = azurerm_resource_group.avi_resource_group.name
@@ -50,4 +61,3 @@ resource "random_string" "ssh_admin_password" {
   min_lower = 3
   min_numeric = 3
 }
-

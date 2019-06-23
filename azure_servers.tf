@@ -21,6 +21,7 @@ resource "azurerm_virtual_machine" "server" {
   name          = "${var.id}_server${floor((count.index / var.student_count % var.server_count)) + 1}.student${count.index % var.student_count + 1}.lab"
   location                  = var.location
   resource_group_name       = azurerm_resource_group.avi_resource_group.name
+  availability_set_id       = azurerm_availability_set.avi_as[count.index % var.student_count].id
   vm_size                   = var.flavour_server
   network_interface_ids     = [ azurerm_network_interface.server_nic[count.index].id ]
 
